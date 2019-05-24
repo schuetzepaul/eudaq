@@ -165,7 +165,9 @@ class ExampleProducer : public eudaq::Producer {
       try {
         // Loop until Run Control tells us to terminate using the done flag
         while (!done) {
-          if (!hardware.EventsPending()) {
+
+	    /*
+	    if (!hardware.EventsPending()) {
             // No events are pending, so check if the run is stopping
             if (stopping) {
               // if so, signal that there are no events left
@@ -176,6 +178,12 @@ class ExampleProducer : public eudaq::Producer {
             // Then restart the loop
             continue;
           }
+	    */
+	    if (stopping) {
+              // if so, signal that there are no events left
+              stopping = false;
+            }
+            eudaq::mSleep(2000);
           // If the Producer is not in STATE_RUNNING, it will restart the loop
           if (GetConnectionState() != eudaq::ConnectionState::STATE_RUNNING) {
             // Now sleep for a bit, to prevent chewing up all the CPU
@@ -188,9 +196,10 @@ class ExampleProducer : public eudaq::Producer {
           // Create a RawDataEvent to contain the event data to be sent
           eudaq::RawDataEvent ev(EVENT_TYPE, m_run, m_ev);
 
-          for (unsigned plane = 0; plane < hardware.NumSensors(); ++plane) {
+          for (unsigned plane = 0; plane < 1; ++plane) {
             // Read out a block of raw data from the hardware
-            std::vector<unsigned char> buffer = hardware.ReadSensor(plane);
+	      std::string a = "I'm the almighty example data! Harrr harrr";
+	      std::vector<unsigned char> buffer(a.begin(),a.end());
             // Each data block has an ID that is used for ordering the planes later
             // If there are multiple sensors, they should be numbered incrementally
 
