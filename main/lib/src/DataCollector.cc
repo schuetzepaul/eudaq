@@ -114,10 +114,11 @@ namespace eudaq {
     memset(&servaddr, 0, sizeof(servaddr)); 
 
     const char* clientIP = m_config.Get("ClientIP", "127.0.0.1").c_str();
+    int clientPort = m_config.Get("ClientPort", 8080);
     
     // Filling server information 
     servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(8080); 
+    servaddr.sin_port = htons(clientPort);
     servaddr.sin_addr.s_addr = inet_addr(clientIP); 
 
     EUDAQ_INFO("UDP socket was set up");
