@@ -4,6 +4,18 @@
 #include "eudaq/Platform.hh"
 #include <string>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#define MAX_UDP_SIZE 65507
+
 namespace eudaq {
 
   class TransportClient;
@@ -18,9 +30,18 @@ namespace eudaq {
     void SendEvent(const Event &);
     void SendPacket(const AidaPacket &);
 
+    // Functions for sending data blocks via UDP (#BL4S)
+    int ConnectUDP(const std::string &ip_addr, const unsigned int port);
+    int SendBlockUDP(const unsigned char *data, size_t len);
+
   private:
     std::string m_type, m_name;
     TransportClient *m_dataclient;
+
+    // Variables for the UDP connection (#BL4S)
+    int m_UDPsockfd;
+    struct sockaddr_in m_UDPservaddr;
+    char m_UDPbuffer[MAX_UDP_SIZE];
   };
 }
 

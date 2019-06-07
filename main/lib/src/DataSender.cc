@@ -10,7 +10,7 @@
 namespace eudaq {
 
   DataSender::DataSender(const std::string &type, const std::string &name)
-      : m_type(type), m_name(name), m_dataclient(0) {}
+    : m_type(type), m_name(name), m_dataclient(0), m_UDPsockfd(0), m_UDPservaddr() {}
 
   void DataSender::Connect(const std::string &server) {
     delete m_dataclient;
@@ -74,6 +74,51 @@ namespace eudaq {
     //    EUDAQ_DEBUG("Sending packet");
     m_dataclient->SendPacket(ser);
     //    EUDAQ_DEBUG("Sent packet");
+  }
+
+
+  // Connecting to a UDP socket (#BL4S)
+  int DataSender::ConnectUDP(const std::string &ip_addr, const unsigned int port){
+
+    // Creating socket file descriptor
+
+    if(m_UDPsockfd != 0){
+      close(m_UDPsockfd);
+    }
+    
+    if ( (m_UDPsockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+      EUDAQ_ERROR("Could not open a UDP socket.");
+    }
+  
+    memset(&m_UDPservaddr, 0, sizeof(m_UDPservaddr)); 
+
+    // Filling server information
+    m_UDPservaddr.sin_family = AF_INET;
+    m_UDPservaddr.sin_port = htons(port);
+    m_UDPservaddr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
+
+    *(reinterpret_cast<int32_t*>(m_UDPbuffer)) = 0x0D15EA5E;
+    EUDAQ_INFO("Successfully set up a UDP connection, sending to receiver: " + to_string(ip_addr.c_str()) + ":" + to_string(port));
+
+    return m_UDPsockfd;
+  }
+
+  // Sending a data block via UDP (#BL4S)
+  int DataSender::SendBlockUDP(const unsigned char *data, size_t len){
+
+    if(len > MAX_UDP_SIZE - 2*(4))
+    {
+      return -1;
+    }
+
+    memcpy(m_UDPbuffer + 4, data, len);
+    *(reinterpret_cast<int32_t*>(m_UDPbuffer + len + 4)) = 0xD15EA5E5;
+
+    int sent_size = sendto(m_UDPsockfd, m_UDPbuffer, len + 2*4, 
+			   MSG_CONFIRM, (const struct sockaddr *) &m_UDPservaddr,  
+			   sizeof(m_UDPservaddr));
+    
+    return sent_size;
   }
 
   DataSender::~DataSender() { delete m_dataclient; }
