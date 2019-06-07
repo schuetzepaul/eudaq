@@ -9,6 +9,13 @@
 #include <stdlib.h>
 #include <memory>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#define MIMOSA_NI_UDP_VERSION 0x1
+
 using eudaq::RawDataEvent;
 
 class NiProducer : public eudaq::Producer {
@@ -43,6 +50,20 @@ public:
         ev.AddBlock(0, mimosa_data_0);
         ev.AddBlock(1, mimosa_data_1);
         SendEvent(ev);
+
+	// Sending UDP packages for #BL4S purposes. Adding header, flags and trailer
+	if(SendUDP){
+
+	  (reinterpret_cast<int32_t*>(m_buffer))[1] = m_ev; // place event number in buffer
+
+	  memcpy(m_buffer + 2*4, &(mimosa_data_0[0]), mimosa_data_0.size()); // write data into buffer at correct position
+	  m_buffer[3] = m_buffer[3] & 0xF0 | 0x00;
+	  SendBlockUDP(m_buffer,mimosa_data_0.size() + 2*4);
+
+	  memcpy(m_buffer + 2*4, &(mimosa_data_1[0]), mimosa_data_1.size());
+	  m_buffer[3] = m_buffer[3] & 0xF0 | 0x01;
+	  SendBlockUDP(m_buffer,mimosa_data_1.size() + 2*4);
+	}
       }
 
     } while (!done);
@@ -59,6 +80,16 @@ public:
         ni_control->DatatransportClientSocket_Open(param);
         std::cout << " " << std::endl;
         configure = true;
+      }
+
+      // Getting UDP config parameters and connect to socket #BL4S
+      SendUDP = param.Get("SendUDP", 0);
+      if (SendUDP){
+	UDPIP = param.Get("UDPReceiverIP", "127.0.0.1");
+	UDPPort = param.Get("UDPReceiverPort", 8080);
+	if(ConnectUDP(UDPIP,UDPPort) < 0){
+	  EUDAQ_ERROR("UDP connection failed");
+	}
       }
 
       // Default parameters
@@ -152,6 +183,18 @@ public:
     } catch (...) {
       printf("Unknown exception\n");
       SetConnectionState(eudaq::ConnectionState::STATE_ERROR, "Configuration Error");
+    }
+
+    // Writing parts of the buffer that will not change
+    if(SendUDP) {
+      // m_MimosaBitmask stands for the enabled sensor planes
+      m_MimosaBitmask = 0x0;
+      for (int i = 0; i < 6; ++i) {
+	m_MimosaBitmask = m_MimosaBitmask | (((MimosaEn[i])?0x01:0x00) << i);
+      }
+
+      m_buffer[0] = m_MimosaBitmask;
+      m_buffer[3] = MIMOSA_NI_UDP_VERSION << 4;
     }
   }
   virtual void OnStartRun(unsigned param) {
@@ -263,6 +306,13 @@ private:
   bool OneFrame;
   bool NiConfig;
 
+  bool SendUDP;
+  unsigned UDPPort;
+  std::string UDPIP;
+  unsigned char m_buffer[MAX_UDP_SIZE];
+
+  char m_MimosaBitmask;
+  
   unsigned char conf_parameters[10];
 };
 // ----------------------------------------------------------------------
