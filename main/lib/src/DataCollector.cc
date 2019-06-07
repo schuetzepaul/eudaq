@@ -4,8 +4,10 @@
 #include "eudaq/DetectorEvent.hh"
 #include "eudaq/Logger.hh"
 #include "eudaq/Utils.hh"
+#include "eudaq/RawDataEvent.hh"
 #include <iostream>
 #include <ostream>
+#include <sstream>
 
 namespace eudaq {
 
@@ -267,6 +269,24 @@ namespace eudaq {
         EUDAQ_INFO("Run " + to_string(ev.GetRunNumber()) + ", EORE = " +
                    to_string(ev.GetEventNumber()));
       }
+
+      if (m_eventnumber < 10){
+	EUDAQ_DEBUG("Number of events: " + to_string(ev.NumEvents()));
+
+	for(int i=0; i<ev.NumEvents(); ++i){
+	  if(ev.GetEvent(i)->GetSubType() == "NI"){
+	    RawDataEvent* niev = reinterpret_cast<RawDataEvent*>(ev.GetEvent(i));
+
+	    for(int j=0; j<niev->NumBlocks(); ++j){
+	      std::stringstream tmp;
+	      for(auto & c : niev->GetBlock(j))
+		tmp << std::hex << (int)c;
+	      EUDAQ_DEBUG("Block " + to_string(j) + " size " + to_string(niev->GetBlock(j).size()) + ": " + tmp.str());
+	    }	    
+	  }
+	}
+      }
+
       if (m_writer.get()) {
         try {
           m_writer->WriteEvent(ev);
