@@ -1,13 +1,17 @@
-/*
-Library to access a PI GCS controller
-tested for a PI C-863 Mercurz DC Motor Controller connected to a rotational stage
-written by Peter Wimberger (summer student, online: @topsrek, always avilable for questions) 
-and Stefano Mersi (supervisor) in Summer 2018
-tested for the XDAQ Supervisor for CMS telescope CHROMIE at CERN
-
- Changes by Lennart Huth <lennart.huth@desy.de>
-*/
 #include "QDCControl.hh"
+
+QDCControl::QDCControl()
+    : i(0)
+{
+    // assign stuff
+}
+
+QDCControl::~QDCControl()
+{
+
+}
+
+
 
 //Private Functions
 
@@ -42,6 +46,8 @@ int QDCControl::SaveHistograms(uint32_t histo[32][4096], int numch)
     for(j=0; j<numch; j++) {
         FILE *fout;
         char fname[100];
+
+        char path[255];
         sprintf(fname, "%s\\Histo_%d.txt",path,  j);
         fout = fopen(fname, "w");
         for(i=0; i<4096; i++)
@@ -194,7 +200,6 @@ void QDCControl::findModelVersion(uint16_t model, uint16_t vers, char *modelVers
             *ch = 32;
             return;
         }
-        break;
     }
 }
 
@@ -226,151 +231,26 @@ int QDCControl::ConfigureDiscr(uint16_t OutputWidth, uint16_t Threshold[], uint1
 }
 
 //Public Functions
+
 bool QDCControl::Connect()
 {
+    std::cout<<"link = "<<link<<std::endl;
+    std::cout<<"bdnum = "<<bdnum<<std::endl;
+    std::cout<<"handle = "<<handle<<std::endl;
     // open VME bridge (V1718 or V2718)
-    int bdnum = 0;
     if (CAENVME_Init(cvV1718, link, bdnum, &handle) != cvSuccess) {
         if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
             printf("Can't open VME controller\n");
-            Sleep(1000);
             return false;
         }
     }
-}
+    return true;}
 
-bool QDCControl::Setup(int argc, char *argv[])
+bool QDCControl::AddChannels(std::string Channels)
 {
-    // ************************************************************************
-    // Read configuration file
-    // ************************************************************************
-    if (argc > 1)
-        strcpy(tmpConfigFileName, argv[1]);
-        sprintf(ConfigFileName,"\%s", tmpConfigFileName);
-    if ( (f_ini = fopen(ConfigFileName, "r")) == NULL ) {
-        printf("Can't open Configuration File %s\n", ConfigFileName);
-        return false;
-    }
 
-    while(!feof(f_ini)) {
-        char str[500];
-        int data;
-
-        str[0] = '#';
-        fscanf(f_ini, "%s", str);
-        if (str[0] == '#')
-            fgets(str, 1000, f_ini);
-        else {
-
-            // Output Files
-            if (strstr(str, "ENABLE_LIST_FILE")!=NULL) fscanf(f_ini, "%d", &EnableListFile);
-
-
-            // Base Addresses
-            if (strstr(str, "QTP_BASE_ADDRESS")!=NULL)
-                fscanf(f_ini, "%x", &QTPBaseAddr);
-            if (strstr(str, "DISCR_BASE_ADDRESS")!=NULL)
-                fscanf(f_ini, "%x", &DiscrBaseAddr);
-
-            // I-pedestal
-            if (strstr(str, "IPED")!=NULL) {
-                fscanf(f_ini, "%d", &data);
-                Iped = (uint16_t)data;
-            }
-
-            // Discr_ChannelMask
-            if (strstr(str, "DISCR_CHANNEL_MASK")!=NULL) {
-                fscanf(f_ini, "%x", &data);
-                DiscrChMask = (uint16_t)data;
-            }
-
-            // Discr_OutputWidth
-            if (strstr(str, "DISCR_OUTPUT_WIDTH")!=NULL) {
-                fscanf(f_ini, "%d", &data);
-                DiscrOutputWidth = (uint16_t)data;
-            }
-
-            // Discr_Threshold
-            if (strstr(str, "DISCR_THRESHOLD")!=NULL) {
-                int ch, thr;
-                fscanf(f_ini, "%d", &ch);
-                fscanf(f_ini, "%d", &thr);
-                if (ch < 0) {
-                    for(i=0; i<16; i++)
-                        DiscrThreshold[i] = thr;
-                } else if (ch < 16) {
-                    DiscrThreshold[ch] = thr;
-                }
-            }
-
-            // LLD for the QTP
-            if (strstr(str, "QTP_LLD")!=NULL) {
-                int ch, lld;
-                fscanf(f_ini, "%d", &ch);
-                fscanf(f_ini, "%d", &lld);
-                if (ch < 0) {
-                    for(i=0; i<32; i++)
-                        QTP_LLD[i] = lld;
-                } else if (ch < 32) {
-                    QTP_LLD[ch] = lld;
-                }
-            }
-
-
-            // I-pedestal
-            if (strstr(str, "ENABLE_SUPPRESSION")!=NULL) {
-                fscanf(f_ini, "%d", &EnableSuppression);
-            }
-
-
-        }
-    }
-    fclose (f_ini);
-
-    // open VME bridge (V1718 or V2718)
-    if (CAENVME_Init(cvV1718, link, bdnum, &handle) != cvSuccess) {
-        if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
-            printf("Can't open VME controller\n");
-            Sleep(1000);
-            return false;
-        }
-    }
-
-
-    // Open output files
-    if (EnableListFile) {
-        char tmp[255];
-        sprintf(tmp, "List.txt");
-        if ((of_list=fopen(tmp, "w")) == NULL)
-            printf("Can't open list file for writing\n");
-    }
-    if (EnableRawDataFile) {
-        char tmp[255];
-        sprintf(tmp, "%s\\RawData.txt", path);
-        if ((of_raw=fopen(tmp, "wb")) == NULL)
-            printf("Can't open raw data file for writing\n");
-    }
-
-
-    // Program the discriminator (if the base address is set in the config file)
-    if (DiscrBaseAddr > 0) {
-        int ret;
-        printf("Discr Base Address = 0x%08X\n", DiscrBaseAddr);
-        ret = ConfigureDiscr(DiscrOutputWidth, DiscrThreshold, DiscrChMask);
-        if (ret < 0) {
-            printf("Can't access to the discriminator at Base Address 0x%08X\n", DiscrBaseAddr);
-            printf("Skipping Discriminator configuration\n");
-        }
-    }
-
-    // Check if the base address of the QTP board has been set (otherwise exit)
-    if (QTPBaseAddr == 0) {
-        return false;
-    }
-    printf("QTP Base Address = 0x%08X\n", QTPBaseAddr);
-    BaseAddress = QTPBaseAddr;
-    return true;
 }
+
 
 bool QDCControl::ReadData()
 {

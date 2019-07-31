@@ -1,4 +1,3 @@
-#include "eudaq/Producer.hh"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,10 +7,13 @@
 #include <unistd.h>
 #include <sys/time.h>
 #define Sleep(x) usleep((x)*1000)
+
+#include "eudaq/Producer.hh"
+
 #include <CAENVMElib.h>
 #include <CAENVMEtypes.h>
 #include "QDCControl.hh"
-//#include "console.h"
+
 
 
 class QDCProducer : public eudaq::Producer {
@@ -51,14 +53,18 @@ QDCProducer::~QDCProducer(){
 void QDCProducer::RunLoop(){
 //    while(m_running)
 //        if(m_qdc->ReadData())
-//            m_qdc->Write();
+//            m_qdc->WriteData();
 }
 
 void QDCProducer::DoInitialise(){
-// m_qdc = new QDCControl();
-// if(!m_qdc->Connect())
-//     EUDAQ_THROW("Cannot connect to QDC");
-//  auto conf = GetInitConfiguration();
+ m_qdc = new QDCControl();
+ if(!m_qdc->Connect())
+     EUDAQ_THROW("Cannot connect to QDC");
+  auto conf = GetInitConfiguration();
+    std::string Channels = conf->Get("activeChannels","0"); //Channels to be activated
+
+  EUDAQ_USER(info);
+
 }
 
 void QDCProducer::DoConfigure(){

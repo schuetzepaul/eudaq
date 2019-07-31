@@ -7,7 +7,6 @@
 
 #ifndef QDCControl_HH //header guard
 #define QDCControl_HH
-#endif
 
 #include <string>
 #include <iostream>
@@ -27,7 +26,6 @@
 #include <CAENVMEtypes.h>
 
 #include <cstdint>
-char path[128];
 
 /****************************************************/
 
@@ -57,7 +55,7 @@ public:
     bool EnableChannel(unsigned int);
     bool DisableChannel(unsigned int);
     bool Connect();
-    bool Setup(int argc, char *argv[]);
+    bool AddChannels(std::string Channels);
     bool StartDataTaking();
     bool StopDataTaking();
     bool ReadData();
@@ -116,3 +114,4 @@ private:
     static void findModelVersion(uint16_t model, uint16_t vers, char *modelVersion, int *ch);
 
 };
+#endif
