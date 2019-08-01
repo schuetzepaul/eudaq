@@ -38,6 +38,7 @@ uint16_t QDCControl::read_reg(uint16_t reg_addr)
     }
     if (ENABLE_LOG)
         fprintf(logfile, " Writing register at address %08X; data=%04X; ret=%d\n", (uint32_t)(BaseAddress + reg_addr), data, (int)ret);
+    return(data);
 }
 
 int QDCControl::SaveHistograms(uint32_t histo[32][4096], int numch)
@@ -286,6 +287,9 @@ void QDCControl::StartDataTaking()
     // clear QTP
     write_reg(0x1032, 0x4);
     write_reg(0x1034, 0x4);
+    // Open output files
+    if ((of_list=fopen(OutputFile.c_str(), "w")) == NULL)
+        printf("Can't open file for writing\n");
 }
 
 bool QDCControl::StopDataTaking()
@@ -297,7 +301,11 @@ bool QDCControl::ReadData()
 {
     // if needed, read a new block of data from the board
     if ((pnt == wcnt) || ((buffer[pnt] & DATATYPE_MASK) == DATATYPE_FILLER)) {
+//        std::cout<<std::endl<<std::endl<<"handle: "<<handle<<std::endl<<"BaseAddress: "<<BaseAddress
+//                <<std::endl<<"buffer: "<<(char *)buffer<<std::endl<<std::endl;
+        printf(" handle= %d \n BaseAddress= %d \n cvA32_U_MBLT= %d \n (char *)buffer= %c \n \n",handle,BaseAddress,cvA32_U_MBLT,(char *)buffer);
         CAENVME_FIFOMBLTReadCycle(handle, BaseAddress, (char *)buffer, MAX_BLT_SIZE, cvA32_U_MBLT, &bcnt);
+//        std::cout<<std::endl<<std::endl<<"bcnt: "<<bcnt<<std::endl<<std::endl;
         if (ENABLE_LOG && (bcnt>0)) {
             int b;
             fprintf(logfile, "Read Data Block: size = %d bytes\n", bcnt);
@@ -308,9 +316,9 @@ bool QDCControl::ReadData()
         totnb += bcnt;
         pnt = 0;
     }
-    if (wcnt == 0)  // no data available
-        return false;
-
+//    if (wcnt == 0){  // no data available
+//        return false;
+//    }
     // save raw data (board memory dump)
     if (of_raw != NULL)
         fwrite(buffer, sizeof(char), bcnt, of_raw);
@@ -333,7 +341,7 @@ bool QDCControl::ReadData()
         }
         break;
 
-    /* Channel data */
+        /* Channel data */
     case DATATYPE_CHDATA :
         if((buffer[pnt] & DATATYPE_MASK) != DATATYPE_CHDATA) {
             //printf("Wrong Channel Data: %08X (pnt=%d)\n", buffer[pnt], pnt);
@@ -352,7 +360,7 @@ bool QDCControl::ReadData()
         }
         break;
 
-    /* EOB */
+        /* EOB */
     case DATATYPE_EOB :
         if((buffer[pnt] & DATATYPE_MASK) != DATATYPE_EOB) {
             //printf("EOB not found: %08X (pnt=%d)\n", buffer[pnt], pnt);
@@ -386,7 +394,7 @@ bool QDCControl::ReadData()
 
 bool QDCControl::WriteData()
 {
-
+    return true;
 }
 
 void QDCControl::test()
