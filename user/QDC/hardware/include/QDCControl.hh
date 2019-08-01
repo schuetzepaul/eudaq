@@ -52,14 +52,14 @@ class QDCControl
 public:
     QDCControl();
     virtual ~QDCControl();
-    bool EnableChannel(unsigned int);
-    bool DisableChannel(unsigned int);
     bool Connect();
-    bool AddChannels(std::string Channels);
-    bool StartDataTaking();
+    bool SetupChannels(std::string Channels);
+    void SelectFileToWriteTo(std::string filename);
+    void StartDataTaking();
     bool StopDataTaking();
     bool ReadData();
-    bool Write();
+    bool WriteData();
+    void test();
 
 private:
     // Base Addresses
@@ -104,7 +104,10 @@ private:
     FILE *f_ini;					// config file
     FILE *gnuplot=NULL;				// gnuplot (will be opened in a pipe)
     FILE *fh;						// plotting data file
+
+    //my variables
     int ch_plot_num, ch_plot[32], ch_rem, rem_num;
+    std::string OutputFile;
 
     //Private functions
     void write_reg(uint16_t reg_addr, uint16_t data);
@@ -112,6 +115,5 @@ private:
     int SaveHistograms(uint32_t histo[32][4096], int numch);
     int ConfigureDiscr(uint16_t OutputWidth, uint16_t Threshold[16], uint16_t EnableMask);
     static void findModelVersion(uint16_t model, uint16_t vers, char *modelVersion, int *ch);
-
 };
 #endif

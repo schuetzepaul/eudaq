@@ -230,13 +230,11 @@ int QDCControl::ConfigureDiscr(uint16_t OutputWidth, uint16_t Threshold[], uint1
     BaseAddress = QTPBaseAddr;
 }
 
+
 //Public Functions
 
 bool QDCControl::Connect()
 {
-    std::cout<<"link = "<<link<<std::endl;
-    std::cout<<"bdnum = "<<bdnum<<std::endl;
-    std::cout<<"handle = "<<handle<<std::endl;
     // open VME bridge (V1718 or V2718)
     if (CAENVME_Init(cvV1718, link, bdnum, &handle) != cvSuccess) {
         if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
@@ -246,11 +244,54 @@ bool QDCControl::Connect()
     }
     return true;}
 
-bool QDCControl::AddChannels(std::string Channels)
+bool QDCControl::SetupChannels(std::string info)
+{
+    std::cout<<std::endl<<"SetupChannels Info: "<<info<<std::endl;
+    //initialize channels
+    ch_plot_num = 0;
+    for(int num=0; num < 32; num++){
+        ch_plot[num] = 0;
+    }
+    //convert info string to int channel array
+    for(int num=0; num < info.size(); num++){
+        if(info[num] == ','){
+            ch_plot_num = ch_plot_num + 1;
+        }
+        else{
+            ch_plot[ch_plot_num] = ch_plot[ch_plot_num] * 10 + (int)info[num] - 48;
+        }
+    }
+    ch_plot_num = ch_plot_num + 1;
+    int sum=0;
+    for(int num=0;num<ch_plot_num;num++){
+        sum = sum + ch_plot[num];
+    }
+    std::cout<<std::endl<<std::endl<<"SetupChannels: "<<sum<<std::endl<<std::endl;
+    return true;
+}
+
+void QDCControl::SelectFileToWriteTo(std::string filename)
+{
+    OutputFile = filename;
+}
+
+void QDCControl::StartDataTaking()
+{
+    pnt = 0;  // word pointer
+    wcnt = 0; // num of lword read in the MBLT cycle
+    buffer[0] = DATATYPE_FILLER;
+
+    // clear Event Counter
+    write_reg(0x1040, 0x0);
+    // clear QTP
+    write_reg(0x1032, 0x4);
+    write_reg(0x1034, 0x4);
+}
+
+bool QDCControl::StopDataTaking()
 {
 
 }
-
 
 bool QDCControl::ReadData()
 {
@@ -336,18 +377,25 @@ bool QDCControl::ReadData()
         write_reg(0x1034, 0x4);
         DataType = DATATYPE_HEADER;
         DataError=0;
+        return false;
+    }
+    else{
+        return true;
     }
 }
 
-
-bool QDCControl::StartDataTaking()
-{
-    
-}
-
-bool QDCControl::StopDataTaking()
+bool QDCControl::WriteData()
 {
 
 }
 
-
+void QDCControl::test()
+{
+    std::cout<<std::endl<<std::endl<<"Test Output: "<<std::endl<<std::endl;
+    int sum = 0;
+    for(int num = 0; num < ch_plot_num; num++){
+        sum = sum + ch_plot[num];
+    }
+    std::cout<<"Sum: "<<sum;
+    std::cout<<std::endl<<std::endl<<"OutputFile: "<<OutputFile<<std::endl<<std::endl;
+}
