@@ -31,6 +31,7 @@ public:
     static const uint32_t m_id_factory = eudaq::cstr2hash("QDCProducer");
 private:
     bool m_running;
+    int tmp;
     QDCControl * m_qdc;
 };
 
@@ -40,7 +41,7 @@ auto dummy0 = eudaq::Factory<eudaq::Producer>::
 }
 
 QDCProducer::QDCProducer(const std::string name, const std::string &runcontrol)
-    : eudaq::Producer(name, runcontrol), m_running(false){
+    : eudaq::Producer(name, runcontrol), m_running(false), tmp(0){
     m_running = false;
 }
 
@@ -54,6 +55,12 @@ void QDCProducer::RunLoop(){
         while(m_running){
             if(m_qdc -> ReadData()){
                 m_qdc -> WriteData();
+                auto ev = eudaq::Event::MakeUnique("QDCRaw");
+                ev->SetTag("Plane ID", std::to_string(0));
+                std::vector<uint16_t>  data =  m_qdc->copyData();
+                ev->SetTriggerN(tmp); tmp++;
+                ev->AddBlock(0,data);
+                SendEvent(std::move(ev));
             }
         }
 }
@@ -74,8 +81,10 @@ void QDCProducer::DoInitialise(){
 void QDCProducer::DoConfigure(){
       auto conf = GetConfiguration();
       std::string OutputFile = conf -> Get("OutputFile","Output.txt");
+      std::string BinaryOutputFile = conf -> Get("BinaryFile","Output.dat");
       EUDAQ_USER(OutputFile);
       m_qdc -> SelectFileToWriteTo(OutputFile);
+      m_qdc -> SelectBinFileToWriteTo(BinaryOutputFile);
 }
 
 void QDCProducer::DoStartRun(){

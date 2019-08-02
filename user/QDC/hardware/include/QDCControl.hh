@@ -18,6 +18,7 @@
 #include <vector>
 #include <math.h>
 #include <time.h>
+#include <fstream>
 
 #include <unistd.h>
 #include <sys/time.h>
@@ -56,11 +57,12 @@ public:
     bool Connect();
     bool SetupChannels(std::string Channels);
     void SelectFileToWriteTo(std::string filename);
+    void SelectBinFileToWriteTo(std::string filename);
     bool StartDataTaking();
     bool StopDataTaking();
     bool ReadData();
     //bool serializeData();
-    //std::vector<uint32_t> copyData() const {return m_data_vector;}
+    std::vector<uint16_t> copyData() const {return data_vector;}
     bool WriteData();
     void test();
 
@@ -110,7 +112,9 @@ private:
 
     //my variables
     int ch_plot_num, ch_plot[32], ch_rem, rem_num;
-    std::string OutputFile;
+    std::vector<uint16_t> data_vector;
+    std::string OutputFile, BinaryFile;
+    std::ofstream OutputBinary;
 
     //Private functions
     void write_reg(uint16_t reg_addr, uint16_t data);

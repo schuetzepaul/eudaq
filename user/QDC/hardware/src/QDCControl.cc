@@ -246,7 +246,6 @@ bool QDCControl::Connect()
 
 bool QDCControl::SetupChannels(std::string info)
 {
-    std::cout<<std::endl<<"SetupChannels Info: "<<info<<std::endl;
     //initialize channels
     ch_plot_num = 0;
     for(int num=0; num < 32; num++){
@@ -267,12 +266,19 @@ bool QDCControl::SetupChannels(std::string info)
         sum = sum + ch_plot[num];
     }
     std::cout<<std::endl<<std::endl<<"SetupChannels: "<<sum<<std::endl<<std::endl;
+    data_vector.resize(ch_plot_num,0);
     return true;
 }
 
 void QDCControl::SelectFileToWriteTo(std::string filename)
 {
     OutputFile = filename;
+}
+
+void QDCControl::SelectBinFileToWriteTo(std::string filename)
+{
+    BinaryFile = filename;
+    OutputBinary.open(BinaryFile, std::ios::binary);
 }
 
 bool QDCControl::StartDataTaking()
@@ -370,10 +376,6 @@ bool QDCControl::ReadData()
     if (wcnt == 0){  // no data available
         return false;
     }
-    // save raw data (board memory dump)
-    if (of_raw != NULL)
-        fwrite(buffer, sizeof(char), bcnt, of_raw);
-
     /* header */
     switch (DataType) {
     case DATATYPE_HEADER :
@@ -419,10 +421,14 @@ bool QDCControl::ReadData()
         } else {
             DataType = DATATYPE_HEADER;
             if (of_list != NULL) {
-                fprintf(of_list, "Event Num. %d\n", buffer[pnt] & 0xFFFFFF);
+                uint32_t eventNr = buffer[pnt] & 0xFFFFFF;
+                fprintf(of_list, "Event Num. %d\n", eventNr);
+                OutputBinary.write((char *) & eventNr, sizeof(eventNr));
                 for(int num = 0; num < ch_plot_num; num++){
-                    if (ADCdata[ch_plot[num]] != 0xFFFF)
-                        fprintf(of_list, "Ch %2d: %d\n", ch_plot[num], ADCdata[ch_plot[num]]);
+                    fprintf(of_list, "Ch %2d: %d\n", ch_plot[num], ADCdata[ch_plot[num]]);
+                    data_vector[num] = ADCdata[ch_plot[num]];
+                    OutputBinary.write((char *) &ADCdata[ch_plot[num]], sizeof(uint16_t));
+
                 }
             }
         }
