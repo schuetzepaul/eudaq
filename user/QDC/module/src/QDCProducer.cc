@@ -31,7 +31,6 @@ public:
     static const uint32_t m_id_factory = eudaq::cstr2hash("QDCProducer");
 private:
     bool m_running;
-    int ch_plot_num, ch_plot[32];
     QDCControl * m_qdc;
 };
 
@@ -62,7 +61,7 @@ void QDCProducer::RunLoop(){
 void QDCProducer::DoInitialise(){
     m_qdc = new QDCControl();
     if(!m_qdc->Connect())
-        EUDAQ_THROW("Cannot connect to QDC");
+        EUDAQ_THROW("Can not connect to QDC");
     auto conf = GetInitConfiguration();
 
     //Get channels to be activated out of the config file
@@ -80,8 +79,13 @@ void QDCProducer::DoConfigure(){
 }
 
 void QDCProducer::DoStartRun(){
-    m_qdc -> StartDataTaking();
-    m_running = true;
+    if(m_qdc -> StartDataTaking()){
+       m_running = true;
+    }
+    else{
+        EUDAQ_THROW("Can not start the run");
+    }
+
 }
 
 void QDCProducer::DoStopRun(){

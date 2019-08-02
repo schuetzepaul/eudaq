@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 #include <math.h>
 #include <time.h>
 
@@ -55,17 +56,19 @@ public:
     bool Connect();
     bool SetupChannels(std::string Channels);
     void SelectFileToWriteTo(std::string filename);
-    void StartDataTaking();
+    bool StartDataTaking();
     bool StopDataTaking();
     bool ReadData();
+    //bool serializeData();
+    //std::vector<uint32_t> copyData() const {return m_data_vector;}
     bool WriteData();
     void test();
 
 private:
     // Base Addresses
     uint32_t BaseAddress;
-    uint32_t QTPBaseAddr = 0;
-    uint32_t DiscrBaseAddr = 0;
+    uint32_t QTPBaseAddr = 0x00110000;
+    uint32_t DiscrBaseAddr = 0x99990000;
 
     // handle for the V1718/V2718
     int32_t handle = -1;
@@ -93,7 +96,7 @@ private:
     char histoFileName[255];
     char modelVersion[3];
     uint16_t fwrev, vers, sernum, model;
-    uint16_t Iped = 255;			// pedestal of the QDC (or resolution of the TDC)
+    uint16_t Iped = 100;			// pedestal of the QDC (or resolution of the TDC)
     uint32_t histo[32][4096];		// histograms (charge, peak or TAC)
     uint32_t buffer[MAX_BLT_SIZE/4];// readout buffer (raw data from the board)
     uint16_t ADCdata[32];			// ADC data (charge, peak or TAC)

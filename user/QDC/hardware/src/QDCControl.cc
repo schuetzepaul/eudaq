@@ -31,13 +31,13 @@ uint16_t QDCControl::read_reg(uint16_t reg_addr)
 {
     uint16_t data=0;
     CVErrorCodes ret;
-    ret = CAENVME_WriteCycle(handle, BaseAddress + reg_addr, &data, cvA32_U_DATA, cvD16);
+    ret = CAENVME_ReadCycle(handle, BaseAddress + reg_addr, &data, cvA32_U_DATA, cvD16);
     if(ret != cvSuccess) {
-        sprintf(ErrorString, "Cannot write at address %08X\n", (uint32_t)(BaseAddress + reg_addr));
+        sprintf(ErrorString, "Cannot read at address %08X\n", (uint32_t)(BaseAddress + reg_addr));
         VMEerror = 1;
     }
     if (ENABLE_LOG)
-        fprintf(logfile, " Writing register at address %08X; data=%04X; ret=%d\n", (uint32_t)(BaseAddress + reg_addr), data, (int)ret);
+        fprintf(logfile, " Reading register at address %08X; data=%04X; ret=%d\n", (uint32_t)(BaseAddress + reg_addr), data, (int)ret);
     return(data);
 }
 
@@ -237,11 +237,10 @@ int QDCControl::ConfigureDiscr(uint16_t OutputWidth, uint16_t Threshold[], uint1
 bool QDCControl::Connect()
 {
     // open VME bridge (V1718 or V2718)
-    if (CAENVME_Init(cvV1718, link, bdnum, &handle) != cvSuccess) {
-        if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
-            printf("Can't open VME controller\n");
-            return false;
-        }
+    if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
+        printf("Can't open VME controller\n");
+        return false;
+
     }
     return true;}
 
@@ -276,8 +275,60 @@ void QDCControl::SelectFileToWriteTo(std::string filename)
     OutputFile = filename;
 }
 
-void QDCControl::StartDataTaking()
+bool QDCControl::StartDataTaking()
 {
+    // Check if the base address of the QTP board has been set (otherwise exit)
+    if (QTPBaseAddr == 0) {
+        printf("No Base Address setting found for the QTP board.\n");
+        printf("Skipping QTP readout\n");
+        return false;
+    }
+    printf("QTP Base Address = 0x%08X\n", QTPBaseAddr);
+    BaseAddress = QTPBaseAddr;
+
+    // ************************************************************************
+    // QTP settings
+    // ************************************************************************
+    // Reset QTP board
+    write_reg(0x1016, 0);
+    if (VMEerror) {
+        printf("Error during QTP programming: ");
+        printf(ErrorString);
+        return false;
+    }
+
+    // Read FW revision
+    fwrev = read_reg(0x1000);
+    if (VMEerror) {
+        return false;
+    }
+
+    model = (read_reg(0x803E) & 0xFF) + ((read_reg(0x803A) & 0xFF) << 8);
+    // read version (> 0xE0 = 16 channels)
+    vers = read_reg(0x8032) & 0xFF;
+
+    findModelVersion(model, vers, modelVersion, &brd_nch);
+
+
+    printf("Model = V%d%s\n", model, modelVersion);
+
+    // Read serial number
+    sernum = (read_reg(0x8F06) & 0xFF) + ((read_reg(0x8F02) & 0xFF) << 8);
+    printf("Serial Number = %d\n", sernum);
+
+    printf("FW Revision = %d.%d\n", (fwrev >> 8) & 0xFF, fwrev & 0xFF);
+
+    write_reg(0x1060, Iped);  // Set pedestal
+    write_reg(0x1010, 0x60);  // enable BERR to close BLT at and of block
+
+    // Set LLD (low level threshold for ADC data)
+    write_reg(0x1034, 0x100);  // set threshold step = 16
+    for(i=0; i<brd_nch; i++) {
+        if (brd_nch == 16)	write_reg(0x1080 + i*4, QTP_LLD[i]/16);
+        else				write_reg(0x1080 + i*2, QTP_LLD[i]/16);
+    }
+
+    //prepare for run
     pnt = 0;  // word pointer
     wcnt = 0; // num of lword read in the MBLT cycle
     buffer[0] = DATATYPE_FILLER;
@@ -288,8 +339,12 @@ void QDCControl::StartDataTaking()
     write_reg(0x1032, 0x4);
     write_reg(0x1034, 0x4);
     // Open output files
-    if ((of_list=fopen(OutputFile.c_str(), "w")) == NULL)
+    if ((of_list=fopen(OutputFile.c_str(), "w")) == NULL){
         printf("Can't open file for writing\n");
+        return false;
+    }
+    return true;
+
 }
 
 bool QDCControl::StopDataTaking()
@@ -301,11 +356,7 @@ bool QDCControl::ReadData()
 {
     // if needed, read a new block of data from the board
     if ((pnt == wcnt) || ((buffer[pnt] & DATATYPE_MASK) == DATATYPE_FILLER)) {
-//        std::cout<<std::endl<<std::endl<<"handle: "<<handle<<std::endl<<"BaseAddress: "<<BaseAddress
-//                <<std::endl<<"buffer: "<<(char *)buffer<<std::endl<<std::endl;
-        printf(" handle= %d \n BaseAddress= %d \n cvA32_U_MBLT= %d \n (char *)buffer= %c \n \n",handle,BaseAddress,cvA32_U_MBLT,(char *)buffer);
         CAENVME_FIFOMBLTReadCycle(handle, BaseAddress, (char *)buffer, MAX_BLT_SIZE, cvA32_U_MBLT, &bcnt);
-//        std::cout<<std::endl<<std::endl<<"bcnt: "<<bcnt<<std::endl<<std::endl;
         if (ENABLE_LOG && (bcnt>0)) {
             int b;
             fprintf(logfile, "Read Data Block: size = %d bytes\n", bcnt);
@@ -316,9 +367,9 @@ bool QDCControl::ReadData()
         totnb += bcnt;
         pnt = 0;
     }
-//    if (wcnt == 0){  // no data available
-//        return false;
-//    }
+    if (wcnt == 0){  // no data available
+        return false;
+    }
     // save raw data (board memory dump)
     if (of_raw != NULL)
         fwrite(buffer, sizeof(char), bcnt, of_raw);
