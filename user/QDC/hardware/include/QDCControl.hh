@@ -61,10 +61,9 @@ public:
     bool StartDataTaking();
     bool StopDataTaking();
     bool ReadData();
+    void ResetVariables();
     //bool serializeData();
     std::vector<uint16_t> copyData() const {return data_vector;}
-    bool WriteData();
-    void test();
 
 private:
     // Base Addresses

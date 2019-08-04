@@ -376,6 +376,7 @@ bool QDCControl::ReadData()
     if (wcnt == 0){  // no data available
         return false;
     }
+
     /* header */
     switch (DataType) {
     case DATATYPE_HEADER :
@@ -449,18 +450,34 @@ bool QDCControl::ReadData()
     }
 }
 
-bool QDCControl::WriteData()
+void QDCControl::ResetVariables()
 {
-    return true;
-}
+    // Base Addresses
+    QTPBaseAddr = 0x00110000;
+    DiscrBaseAddr = 0x99990000;
 
-void QDCControl::test()
-{
-    std::cout<<std::endl<<std::endl<<"Test Output: "<<std::endl<<std::endl;
-    int sum = 0;
-    for(int num = 0; num < ch_plot_num; num++){
-        sum = sum + ch_plot[num];
-    }
-    std::cout<<"Sum: "<<sum;
-    std::cout<<std::endl<<std::endl<<"OutputFile: "<<OutputFile<<std::endl<<std::endl;
+    VMEerror = 0;
+
+    //Variables from main
+    pnt = 0;
+    brd_nch = 32;
+    quit=0;
+    totnb=0;
+    nev=0;
+    DataError=0;
+    LogMeas=0;
+    lognum=0;
+    link=0;
+    bdnum=0;
+    DataType = DATATYPE_HEADER;
+    EnableHistoFiles = 0;		// Enable periodic saving of histograms (once every second)
+    EnableListFile = 0;			// Enable saving of list file (sequence of events)
+    EnableRawDataFile = 0;		// Enable saving of raw data (memory dump)
+    EnableSuppression = 1;		// Enable Zero and Overflow suppression if QTP boards
+    DiscrChMask = 0;		// Channel enable mask of the discriminator
+    DiscrOutputWidth = 10;	// Output wodth of the discriminator
+    //DiscrThreshold = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};	// Thresholds of the discriminator
+    //QTP_LLD =	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    Iped = 100;			// pedestal of the QDC (or resolution of the TDC)
+
 }

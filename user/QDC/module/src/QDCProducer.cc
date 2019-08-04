@@ -31,7 +31,7 @@ public:
     static const uint32_t m_id_factory = eudaq::cstr2hash("QDCProducer");
 private:
     bool m_running;
-    int tmp;
+    uint32_t tmp;
     QDCControl * m_qdc;
 };
 
@@ -52,17 +52,17 @@ QDCProducer::~QDCProducer(){
 }
 
 void QDCProducer::RunLoop(){
-        while(m_running){
-            if(m_qdc -> ReadData()){
-                m_qdc -> WriteData();
-                auto ev = eudaq::Event::MakeUnique("QDCRaw");
-                ev->SetTag("Plane ID", std::to_string(0));
-                std::vector<uint16_t>  data =  m_qdc->copyData();
-                ev->SetTriggerN(tmp); tmp++;
-                ev->AddBlock(0,data);
-                SendEvent(std::move(ev));
-            }
+    while(m_running){
+        if(m_qdc -> ReadData()){
+            auto ev = eudaq::Event::MakeUnique("QDCRaw");
+            ev->SetTag("Plane ID", std::to_string(0));
+            std::vector<uint16_t>  data =  m_qdc->copyData();
+            ev->SetTriggerN(tmp);
+            tmp++;
+            ev->AddBlock(0,data);
+            SendEvent(std::move(ev));
         }
+    }
 }
 
 void QDCProducer::DoInitialise(){
@@ -79,17 +79,21 @@ void QDCProducer::DoInitialise(){
 }
 
 void QDCProducer::DoConfigure(){
-      auto conf = GetConfiguration();
-      std::string OutputFile = conf -> Get("OutputFile","Output.txt");
-      std::string BinaryOutputFile = conf -> Get("BinaryFile","Output.dat");
-      EUDAQ_USER(OutputFile);
-      m_qdc -> SelectFileToWriteTo(OutputFile);
-      m_qdc -> SelectBinFileToWriteTo(BinaryOutputFile);
+    //reset variables
+    m_qdc -> ResetVariables();
+
+    //Configure
+    auto conf = GetConfiguration();
+    std::string TextFile = conf -> Get("TextFile","Output.txt");
+    std::string BinaryOutputFile = conf -> Get("BinaryFile","Output.dat");
+    EUDAQ_USER(TextFile);
+    m_qdc -> SelectFileToWriteTo(TextFile);
+    m_qdc -> SelectBinFileToWriteTo(BinaryOutputFile);
 }
 
 void QDCProducer::DoStartRun(){
     if(m_qdc -> StartDataTaking()){
-       m_running = true;
+        m_running = true;
     }
     else{
         EUDAQ_THROW("Can not start the run");
@@ -99,6 +103,9 @@ void QDCProducer::DoStartRun(){
 
 void QDCProducer::DoStopRun(){
     m_running = false;
+    //reset variables
+    m_qdc -> ResetVariables();
+
 }
 
 void QDCProducer::DoReset(){

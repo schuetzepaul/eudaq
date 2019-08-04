@@ -15,7 +15,7 @@ int main(){
     do{
         cData=0;
         cData_32 = 0;
-        if(count % 15 ==0 ){
+        if(count % 11 == 0 ){
             InputBinary.read((char *) &cData_32, sizeof(uint32_t));
             OutputNormal<<cData_32<<std::endl;
         }
@@ -24,11 +24,11 @@ int main(){
             OutputNormal<<cData<<std::endl;
             Data.push_back(cData);
         }
-        count ++;
+        count = count +1 ;
         cout << count << "\t" << cData<< "\t" << cData_32<<endl;
 
 
-    }while(cData != 0 || cData_32 !=0);
+    }while(cData != 0 || cData_32 !=0 || count == 1);
 //    for(int i = 0; i < count; i++){
 //        OutputNormal<<Data[i]<<std::endl;
 //    }
