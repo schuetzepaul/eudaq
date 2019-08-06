@@ -60,7 +60,7 @@ public:
     void SelectBinFileToWriteTo(std::string filename);
     bool StartDataTaking();
     bool StopDataTaking();
-    bool ReadData();
+    int ReadData();
     void ResetVariables();
     //bool serializeData();
     std::vector<uint16_t> copyData() const {return data_vector;}

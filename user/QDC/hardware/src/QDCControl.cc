@@ -358,8 +358,9 @@ bool QDCControl::StopDataTaking()
 
 }
 
-bool QDCControl::ReadData()
+int QDCControl::ReadData()
 {
+  int retval=0;
     // if needed, read a new block of data from the board
     if ((pnt == wcnt) || ((buffer[pnt] & DATATYPE_MASK) == DATATYPE_FILLER)) {
         CAENVME_FIFOMBLTReadCycle(handle, BaseAddress, (char *)buffer, MAX_BLT_SIZE, cvA32_U_MBLT, &bcnt);
@@ -374,7 +375,8 @@ bool QDCControl::ReadData()
         pnt = 0;
     }
     if (wcnt == 0){  // no data available
-        return false;
+      //std::cout << "no data -.- " <<std::endl;
+      return false;
     }
 
     /* header */
@@ -397,7 +399,8 @@ bool QDCControl::ReadData()
 
         /* Channel data */
     case DATATYPE_CHDATA :
-        if((buffer[pnt] & DATATYPE_MASK) != DATATYPE_CHDATA) {
+      retval = 2;
+      if((buffer[pnt] & DATATYPE_MASK) != DATATYPE_CHDATA) {
             //printf("Wrong Channel Data: %08X (pnt=%d)\n", buffer[pnt], pnt);
             DataError = 1;
         } else {
@@ -416,6 +419,7 @@ bool QDCControl::ReadData()
 
         /* EOB */
     case DATATYPE_EOB :
+      retval = 3;
         if((buffer[pnt] & DATATYPE_MASK) != DATATYPE_EOB) {
             //printf("EOB not found: %08X (pnt=%d)\n", buffer[pnt], pnt);
             DataError = 1;
@@ -438,6 +442,7 @@ bool QDCControl::ReadData()
     pnt++;
 
     if (DataError) {
+      std::cout << "Data Error" <<std::endl;
         pnt = wcnt;
         write_reg(0x1032, 0x4);
         write_reg(0x1034, 0x4);
@@ -446,7 +451,7 @@ bool QDCControl::ReadData()
         return false;
     }
     else{
-        return true;
+        return retval;
     }
 }
 

@@ -18,20 +18,30 @@ bool QDCRawEvent2StdEventConverter::Converting(eudaq::EventSPC d1, eudaq::StdEve
     auto block =  ev->GetBlock(0); // vector<uint8_t> data
     uint32_t numChannels =32;
     eudaq::StandardPlane plane(0, "QDCRaw", "QDCRaw");
-    plane.SetSizeZS(32,65536,numChannels);
+    plane.SetSizeZS(32,4096,1);
     std::vector<uint16_t> data;
     uint16_t value = 0;
     int count =0;
+    std::cout << "***** new Event ****" << std::endl;
+    std::cout <<d1->GetTriggerN() << std::endl;
+
+
     for(auto val : block)
     {
+        std::cout <<std::hex << uint32_t(val) << std::endl;
         count++;
         if(count%2==0)
         {
-            value += val;
+            value += (val <<8);
+            std::cout <<"---"<< value<<std::endl;
             data.push_back(value);
+            value =0;
         }
         else
-            value = val <<0xFF;
+        {
+            value += val;
+           // std::cout <<"+++"<< value<<std::endl;
+        }
     }
     int channel = 0;
     for(auto d : data){
