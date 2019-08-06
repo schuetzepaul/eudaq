@@ -54,14 +54,14 @@ QDCProducer::~QDCProducer(){
 void QDCProducer::RunLoop(){
     while(m_running){
         if(3 == m_qdc->ReadData()){
-	  std::cout << "read event: " << tmp <<std::endl;
+      //std::cout << "read event: " << tmp <<std::endl;
 	   auto ev = eudaq::Event::MakeUnique("QDCRaw");
             ev->SetTag("Plane ID", std::to_string(0));
             std::vector<uint16_t>  data =  m_qdc->copyData();
             ev->SetTriggerN(tmp);
             ev->AddBlock(0,data);
             SendEvent(std::move(ev));
-	    std::cout << "event sent"<<std::endl;
+//	    std::cout << "event sent"<<std::endl;
 	    tmp++;
 	}
 	else

@@ -16,38 +16,33 @@ auto dummy0 = eudaq::Factory<eudaq::StdEventConverter>::
 bool QDCRawEvent2StdEventConverter::Converting(eudaq::EventSPC d1, eudaq::StdEventSP d2, eudaq::ConfigSPC conf) const{
     auto ev = std::dynamic_pointer_cast<const eudaq::RawEvent>(d1);
     auto block =  ev->GetBlock(0); // vector<uint8_t> data
-    uint32_t numChannels =32;
-    eudaq::StandardPlane plane(0, "QDCRaw", "QDCRaw");
-    plane.SetSizeZS(32,4096,1);
+
     std::vector<uint16_t> data;
     uint16_t value = 0;
     int count =0;
-    std::cout << "***** new Event ****" << std::endl;
-    std::cout <<d1->GetTriggerN() << std::endl;
+//    std::cout << "***** new Event ****" << std::endl;
+//    std::cout <<d1->GetTriggerN() << std::endl;
 
 
     for(auto val : block)
     {
-        std::cout <<std::hex << uint32_t(val) << std::endl;
+    //    std::cout <<std::hex << uint32_t(val) << std::endl;
         count++;
         if(count%2==0)
         {
+            eudaq::StandardPlane plane(int((count-1)/2), "QDCRaw", "QDCRaw");
+            plane.SetSizeZS(1,4096,1);
             value += (val <<8);
-            std::cout <<"---"<< value<<std::endl;
-            data.push_back(value);
+            plane.SetPixel(0,0,value,0);
+            d2->AddPlane(plane);
+//            std::cout <<"---"<< value<<std::endl;
+            //data.push_back(value);
             value =0;
         }
         else
         {
             value += val;
-           // std::cout <<"+++"<< value<<std::endl;
         }
     }
-    int channel = 0;
-    for(auto d : data){
-        plane.SetPixel(channel,channel,d,0);
-        channel++;
-    }
-    d2->AddPlane(plane);
     return true;
 }
