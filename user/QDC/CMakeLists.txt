@@ -1,5 +1,5 @@
 if(WIN32)
-  message(STATUS "QDCproducer is not supported on Windows, you are very
+  message(STATUS "QDCProducer is not supported on Windows, you are very
   welcome to implement the windows functionalitites")
   return()
 endif()
@@ -10,7 +10,7 @@ get_filename_component(EUDAQ_USERNAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 set(EUDAQ_MODULE module_${EUDAQ_USERNAME})
 #set(USER_HARDWARE_LIBRARY ${EUDAQ_USERNAME}_static)
 
-option(USER_QDC_BUILD "build user/QDC" OFF)
+option(USER_QDC_BUILD "build user/QDC" ON)
 
 if(NOT USER_QDC_BUILD)
     message(STATUS "user/QDC is NOT to be built (USER_QDC_BUILD=OFF)")
@@ -21,6 +21,6 @@ message(STATUS "user/QDC is to be built (USER_QDC_BUILD=ON)")
 
 include_directories(${EUDAQ_INCLUDE_DIRS})
 
-#include_directories(hardware/include)
-#add_subdirectory(hardware)
+include_directories(hardware/include)
+add_subdirectory(hardware)
 add_subdirectory(module)

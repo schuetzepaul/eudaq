@@ -61,7 +61,8 @@ public:
     bool StartDataTaking();
     bool StopDataTaking();
     int ReadData();
-    void ResetVariables();
+    bool disconnect();
+    void resetVariables();
     //bool serializeData();
     std::vector<uint16_t> copyData() const {return data_vector;}
 

@@ -252,7 +252,7 @@ bool QDCControl::SetupChannels(std::string info)
         ch_plot[num] = 0;
     }
     //convert info string to int channel array
-    for(int num=0; num < info.size(); num++){
+    for(unsigned num=0; num < info.size(); num++){
         if(info[num] == ','){
             ch_plot_num = ch_plot_num + 1;
         }
@@ -355,7 +355,7 @@ bool QDCControl::StartDataTaking()
 
 bool QDCControl::StopDataTaking()
 {
-
+    return true;
 }
 
 int QDCControl::ReadData()
@@ -455,7 +455,18 @@ int QDCControl::ReadData()
     }
 }
 
-void QDCControl::ResetVariables()
+bool QDCControl::disconnect()
+{
+    // open VME bridge (V1718 or V2718)
+    if (CAENVME_End(handle) != cvSuccess) {
+        printf("Can't disconnect VME controller\n");
+        return false;
+    } else {
+    return true;
+    }
+}
+
+void QDCControl::resetVariables()
 {
     // Base Addresses
     QTPBaseAddr = 0x00110000;

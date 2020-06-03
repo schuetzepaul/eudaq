@@ -1,15 +1,18 @@
 include_directories(include)
-include_directories(/home/testbeam/Desktop/CAENVMELib-2.50_changed/include)
+include_directories(/usr/include/caen)
 # library
-if(USER_QDC_BUILD)
-  list(APPEND USER_HARDWARE_SRC src/QDCControl.cc)
-endif()
 
 find_library(CAEN_FOUND NAMES CAENVME HINTS "/usr/lib")
 if(NOT CAEN_FOUND)
-  message(FATAL_ERROR "CAEN library not found")
+  message("CAEN library not found - please installl CAEN libs")
 else()
     message("Found CAEN Libs controllers")
+endif()
+
+if(USER_QDC_BUILD AND CAEN_FOUND)
+  list(APPEND USER_HARDWARE_SRC src/QDCControl.cc)
+else()
+    return()
 endif()
 
 if(USER_QDC_BUILD)
@@ -17,7 +20,7 @@ if(USER_QDC_BUILD)
   target_link_libraries(${USER_HARDWARE_LIBRARY}
                         ${EUDAQ_CORE_LIBRARY}
                         ${USER_HARDWARE_DEP_LIB}
-                        CAENVME)
+                        ${CAENVME})
   list(APPEND INSTALL_TARGETS ${USER_HARDWARE_LIBRARY})
 endif()
 # end library

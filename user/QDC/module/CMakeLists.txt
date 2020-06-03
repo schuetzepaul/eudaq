@@ -1,7 +1,7 @@
 include_directories(include)
 aux_source_directory(src MODULE_SRC)
 
-if( USER_QDC_BUILD)
+if(NOT USER_QDC_BUILD)
   list(REMOVE_ITEM MODULE_SRC src/QDCProducer.cc)
 endif()
 
