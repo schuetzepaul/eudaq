@@ -20,13 +20,8 @@ bool QDCRawEvent2StdEventConverter::Converting(eudaq::EventSPC d1, eudaq::StdEve
     std::vector<uint16_t> data;
     uint16_t value = 0;
     int count =0;
-//    std::cout << "***** new Event ****" << std::endl;
-//    std::cout <<d1->GetTriggerN() << std::endl;
-
-
     for(auto val : block)
     {
-    //    std::cout <<std::hex << uint32_t(val) << std::endl;
         count++;
         if(count%2==0)
         {
@@ -35,8 +30,6 @@ bool QDCRawEvent2StdEventConverter::Converting(eudaq::EventSPC d1, eudaq::StdEve
             value += (val <<8);
             plane.SetPixel(0,0,value,0);
             d2->AddPlane(plane);
-//            std::cout <<"---"<< value<<std::endl;
-            //data.push_back(value);
             value =0;
         }
         else

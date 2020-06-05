@@ -1,8 +1,12 @@
 /*
     CAEN QDC V2718 control library
+    Based on the CAENVME demo scripts
     G Morras - DESY summer student
     2019
     gonzalo.morras@desy.de
+    adjustments:
+    lennart.huth@desy.de
+
 */
 
 #ifndef QDCControl_HH //header guard

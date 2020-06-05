@@ -298,8 +298,7 @@ bool QDCControl::StartDataTaking()
     // Reset QTP board
     write_reg(0x1016, 0);
     if (VMEerror) {
-        printf("Error during QTP programming: ");
-        printf(ErrorString);
+        std::cout<<"Error during QTP programming: "<<ErrorString<<std::endl;
         return false;
     }
 

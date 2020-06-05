@@ -32,7 +32,7 @@ public:
 private:
     bool m_running;
     uint32_t tmp;
-    QDCControl * m_qdc;
+    std::unique_ptr<QDCControl> m_qdc;
 };
 
 namespace{
@@ -46,9 +46,7 @@ QDCProducer::QDCProducer(const std::string name, const std::string &runcontrol)
 }
 
 QDCProducer::~QDCProducer(){
-    m_running = false;
-    if(m_qdc != nullptr)
-        delete m_qdc;
+
 }
 
 void QDCProducer::RunLoop(){
@@ -71,7 +69,7 @@ void QDCProducer::RunLoop(){
 }
 
 void QDCProducer::DoInitialise(){
-    m_qdc = new QDCControl();
+    m_qdc = std::make_unique<QDCControl>(new QDCControl());
     if(!m_qdc->Connect())
         EUDAQ_THROW("Can not connect to QDC");
     auto conf = GetInitConfiguration();
@@ -85,7 +83,7 @@ void QDCProducer::DoInitialise(){
 
 void QDCProducer::DoConfigure(){
     //reset variables
-    m_qdc -> ResetVariables();
+    m_qdc ->resetVariables();
 
     //Configure
     auto conf = GetConfiguration();
@@ -102,7 +100,7 @@ void QDCProducer::DoStartRun(){
         m_running = true;
     }
     else{
-        EUDAQ_THROW("Can not start the run");
+        EUDAQ_THROW("Failed to start data taking from QDC - restart required");
     }
 
 }
@@ -110,11 +108,13 @@ void QDCProducer::DoStartRun(){
 void QDCProducer::DoStopRun(){
     m_running = false;
     //reset variables
-    m_qdc -> ResetVariables();
+    m_qdc ->resetVariables();
 
 }
 
 void QDCProducer::DoReset(){
+    // on reset we will disconnect to allow for updated channel list
+    m_qdc->disconnect();
     m_running = false;
 }
 

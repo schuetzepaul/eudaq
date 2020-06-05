@@ -4,7 +4,7 @@ include_directories(/usr/include/caen)
 
 find_library(CAEN_FOUND NAMES CAENVME HINTS "/usr/lib")
 if(NOT CAEN_FOUND)
-  message("CAEN library not found - please installl CAEN libs")
+  message("CAEN library not found - please installl CAEN libs, which are provided in external")
 else()
     message("Found CAEN Libs controllers")
 endif()
