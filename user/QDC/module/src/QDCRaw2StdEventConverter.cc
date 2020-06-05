@@ -15,7 +15,7 @@ auto dummy0 = eudaq::Factory<eudaq::StdEventConverter>::
 
 bool QDCRawEvent2StdEventConverter::Converting(eudaq::EventSPC d1, eudaq::StdEventSP d2, eudaq::ConfigSPC conf) const{
     auto ev = std::dynamic_pointer_cast<const eudaq::RawEvent>(d1);
-    auto block =  ev->GetBlock(0); // vector<uint8_t> data
+    auto block =  ev->GetBlock(0);
 
     std::vector<uint16_t> data;
     uint16_t value = 0;
