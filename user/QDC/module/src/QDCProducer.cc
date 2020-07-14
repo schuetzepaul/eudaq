@@ -32,7 +32,7 @@ public:
 private:
     bool m_running;
     uint32_t tmp;
-    std::shared_ptr<QDCControl> m_qdc;
+    QDCControl* m_qdc;
 };
 
 namespace{
@@ -69,7 +69,7 @@ void QDCProducer::RunLoop(){
 }
 
 void QDCProducer::DoInitialise(){
-    m_qdc = std::make_shared<QDCControl>();
+    m_qdc = new QDCControl();
     if(!m_qdc->Connect())
         EUDAQ_THROW("Can not connect to QDC");
     auto conf = GetInitConfiguration();
