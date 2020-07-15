@@ -238,11 +238,12 @@ bool QDCControl::Connect()
 {
     // open VME bridge (V1718 or V2718)
     if (CAENVME_Init(cvV2718, link, bdnum, &handle) != cvSuccess) {
-        printf("Can't open VME controller\n");
+        printf(("Can't open VME controller: "+std::to_string(handle)+"\n").c_str());
         return false;
 
     }
-    return true;}
+    return true;
+}
 
 bool QDCControl::SetupChannels(std::string info)
 {
