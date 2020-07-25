@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <cstdlib>
+
 #include "eudaq/Config.hh"
 #include "eudaq/Logger.hh"
 #include "eudaq/RunControl.hh"
@@ -123,7 +125,7 @@ private:
      * @param conf Default configuration
      * @param sec Scan section beeing read
      */
-    void createConfigs(int condition, eudaq::ConfigurationSP conf, std::vector<ScanSection> sec);
+    void createConfigs(unsigned condition, eudaq::ConfigurationSP conf, std::vector<ScanSection> sec);
     /**
      * @brief add additional information for each section
      * @param s Section read in

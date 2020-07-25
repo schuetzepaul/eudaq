@@ -1,4 +1,7 @@
 include_directories(${EUDAQ_INCLUDE_DIRS})
+
+# Define interface library for all EUDAQ modules:
+
 add_subdirectory(example)
 add_subdirectory(experimental)
 add_subdirectory(eudet)

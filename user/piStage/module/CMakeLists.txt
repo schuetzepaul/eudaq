@@ -10,6 +10,7 @@ target_link_libraries(${EUDAQ_MODULE}
                       ${EUDAQ_CORE_LIBRARY}
                       ${USER_HARDWARE_LIBRARY})
 
+
 install(TARGETS
   ${EUDAQ_MODULE}
   RUNTIME DESTINATION bin
