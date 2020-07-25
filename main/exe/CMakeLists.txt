@@ -4,6 +4,13 @@ if(NOT EUDAQ_BUILD_EXECUTABLE)
   return()
 endif()
 
+list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+find_package(ROOT REQUIRED COMPONENTS Gui)
+include_directories(${ROOT_INCLUDE_DIR})
+if(ROOT_USE_FILE)
+  include(${ROOT_USE_FILE})
+endif()
+
 set(EXE_CLI_PRODUCER euCliProducer)
 add_executable(${EXE_CLI_PRODUCER} src/euCliProducer.cxx)
 target_link_libraries(${EXE_CLI_PRODUCER} ${EUDAQ_CORE_LIBRARY} ${EUDAQ_THREADS_LIB})
@@ -41,7 +48,7 @@ list(APPEND INSTALL_TARGETS ${EXE_CLI_HASH})
 
 set(EXE_CLI_READER euCliReader)
 add_executable(${EXE_CLI_READER} src/euCliReader.cxx)
-target_link_libraries(${EXE_CLI_READER} ${EUDAQ_CORE_LIBRARY} ${EUDAQ_THREADS_LIB})
+target_link_libraries(${EXE_CLI_READER} ${EUDAQ_CORE_LIBRARY} ${EUDAQ_THREADS_LIB} ${ROOT_LIBRARIES})
 list(APPEND INSTALL_TARGETS ${EXE_CLI_READER})
 
 install(TARGETS ${INSTALL_TARGETS}

@@ -1,7 +1,7 @@
 # IP variables for start scripts
-export RUNCONTROLIP=127.0.0.1
-export TLUIP=127.0.0.1
-export NIIP=127.0.0.1
+export RUNCONTROLIP=192.168.21.1
+export TLUIP=192.168.21.1
+export NIIP=192.168.21.1
 
 echo "Check pathes in telescope.ini and in the conf-files"
 
