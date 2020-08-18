@@ -570,17 +570,21 @@ void CMSPixelProducer::ReadoutLoop() {
           }*/
 
         SendEvent(ev);
-        m_ev++;
 
         // Sending UDP packages for #BL4S purposes. Adding header, flags and trailer
         if(SendUDP){
-
           (reinterpret_cast<int32_t*>(m_buffer))[1] = m_ev; // place event number in buffer
 
-          memcpy(m_buffer + 2*4, &(daqEvent.data[0]), daqEvent.data.size()); // write data into buffer at correct position
+          // write data into buffer at correct position
+          auto number_of_data_bytes = sizeof(daqEvent.data[0]) *  daqEvent.data.size();
+          memcpy(m_buffer + 2*4, reinterpret_cast<const char*>(&(daqEvent.data[0])), number_of_data_bytes);
+
           m_buffer[3] = m_buffer[3] & 0xF0 | 0x00;
-          SendBlockUDP(m_buffer,daqEvent.data.size() + 2*4);
+          SendBlockUDP(m_buffer, number_of_data_bytes + 2*4);
         }
+
+        // Increment event number
+        m_ev++;
 
         // Analog: Events with pixel data have more than 4 words for TBM
         // header/trailer and 3 for each ROC header:
