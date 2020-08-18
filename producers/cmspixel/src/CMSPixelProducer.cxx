@@ -21,6 +21,13 @@
 #include <vector>
 #include <sched.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#define CMSPIXEL_UDP_VERSION 0x1
+
 using namespace pxar;
 using namespace std;
 
@@ -59,15 +66,15 @@ CMSPixelProducer::CMSPixelProducer(const std::string &name,
 void CMSPixelProducer::OnInitialise(const eudaq::Configuration &init){
       try {
         std::cout << "Reading: " << init.Name() << std::endl;
-        
-        // Do any initialisation of the hardware here 
+
+        // Do any initialisation of the hardware here
         // "start-up configuration", which is usally done only once in the beginning
         // Configuration file values are accessible as config.Get(name, default)
 
         // At the end, set the ConnectionState that will be displayed in the Run Control.
         // and set the state of the machine.
         SetConnectionState(eudaq::ConnectionState::STATE_UNCONF, "Initialised (" + init.Name() + ")");
-      } 
+      }
       catch (...) {
         // Message as cout in the terminal of your producer
         std::cout << "Unknown exception" << std::endl;
@@ -75,7 +82,7 @@ void CMSPixelProducer::OnInitialise(const eudaq::Configuration &init){
         EUDAQ_ERROR("Error occurred in initialization phase of CMSPixelProducer");
         // Otherwise, the State is set to ERROR
         SetConnectionState(eudaq::ConnectionState::STATE_ERROR, "Initialisation Error");
-      }	
+      }
 }
 
 void CMSPixelProducer::OnConfigure(const eudaq::Configuration &config) {
@@ -323,6 +330,21 @@ void CMSPixelProducer::OnConfigure(const eudaq::Configuration &config) {
       SetConnectionState(eudaq::ConnectionState::STATE_CONF, "Configured (" + config.Name() + ")");
     std::cout << "=============================\nCONFIGURED\n=================="
                  "===========" << std::endl;
+
+
+    // Getting UDP config parameters and connect to socket #BL4S
+    SendUDP = config.Get("SendUDP", 0);
+    if (SendUDP){
+      UDPIP = config.Get("UDPReceiverIP", "127.0.0.1");
+      UDPPort = config.Get("UDPReceiverPort", 8080);
+      if(ConnectUDP(UDPIP,UDPPort) < 0){
+        SetConnectionState(eudaq::ConnectionState::STATE_ERROR, "UDP connection failed");
+      }
+
+      // Writing parts of the buffer that will not change
+      m_buffer[3] = CMSPIXEL_UDP_VERSION << 4;
+    }
+
   } catch (pxar::InvalidConfig &e) {
     EUDAQ_ERROR(string("Invalid configuration settings: " + string(e.what())));
     SetConnectionState(eudaq::ConnectionState::STATE_ERROR,
@@ -549,6 +571,17 @@ void CMSPixelProducer::ReadoutLoop() {
 
         SendEvent(ev);
         m_ev++;
+
+        // Sending UDP packages for #BL4S purposes. Adding header, flags and trailer
+        if(SendUDP){
+
+          (reinterpret_cast<int32_t*>(m_buffer))[1] = m_ev; // place event number in buffer
+
+          memcpy(m_buffer + 2*4, &(daqEvent.data[0]), daqEvent.data.size()); // write data into buffer at correct position
+          m_buffer[3] = m_buffer[3] & 0xF0 | 0x00;
+          SendBlockUDP(m_buffer,daqEvent.data.size() + 2*4);
+        }
+
         // Analog: Events with pixel data have more than 4 words for TBM
         // header/trailer and 3 for each ROC header:
         if (m_roctype == "psi46v2") {

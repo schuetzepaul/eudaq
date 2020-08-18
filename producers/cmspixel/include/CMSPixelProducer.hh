@@ -64,5 +64,11 @@ private:
   int m_pattern_delay;
   std::ofstream m_fout;
   eudaq::Timer *m_reset_timer;
+
+  // UDP stuff
+  bool SendUDP;
+  unsigned UDPPort;
+  std::string UDPIP;
+  unsigned char m_buffer[MAX_UDP_SIZE];
 };
 #endif /*CMSPIXELPRODUCER_HH*/
