@@ -46,13 +46,21 @@ CMSPixelProducer::GetConfDACs(int16_t i2c, bool tbm) {
   std::string regname = (tbm ? "TBM" : "DAC");
 
   std::string filename;
-  // Read TBM register file, Core A:
+  // Read TBM 0 register file, Core A:
   if (tbm && i2c < 1) {
     filename = prepareFilename(m_config.Get("tbmFile", ""), "0a");
   }
-  // Read TBM register file, Core B:
-  else if (tbm && i2c >= 1) {
+  // Read TBM 0 register file, Core B:
+  else if (tbm && i2c == 1) {
     filename = prepareFilename(m_config.Get("tbmFile", ""), "0b");
+  }
+  // Read TBM 1 register file, Core A:
+  else if (tbm && i2c == 2) {
+    filename = prepareFilename(m_config.Get("tbmFile", ""), "1a");
+  }
+  // Read TBM 1 register file, Core B:
+  else if (tbm && i2c == 3) {
+    filename = prepareFilename(m_config.Get("tbmFile", ""), "1b");
   }
   // Read ROC DAC file, no I2C address indicator is given, assuming filename is
   // correct "as is":
@@ -80,8 +88,10 @@ CMSPixelProducer::GetConfDACs(int16_t i2c, bool tbm) {
       std::stringstream linestream(line);
       std::string name;
       int dummy, value;
+      //      std::cout << "Line: " << line << std::endl;
       linestream >> dummy >> name >> value;
-
+      std::cout << "dummy: " << dummy << " name: " << name << " value: " << value << std::endl;
+      
       // Check if the first part read was really the register:
       if (name == "") {
         // Rereading with only DAC name and value, no register:
@@ -123,6 +133,9 @@ CMSPixelProducer::GetConfDACs(int16_t i2c, bool tbm) {
     EUDAQ_USER(string("Successfully read ") + std::to_string(dacs.size()) +
                string(" DACs from file, ") + std::to_string(overwritten_dacs) +
                string(" overwritten by config."));
+    if (tbm){
+      std::cout << "DAC: " << dacs[0].first << "  value: " << dacs[0].second << std::endl;
+    }
   } else {
     if (tbm)
       throw pxar::InvalidConfig("Could not open " + regname + " file.");

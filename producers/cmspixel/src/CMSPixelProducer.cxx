@@ -70,8 +70,14 @@ void CMSPixelProducer::OnConfigure(const eudaq::Configuration &config) {
   std::vector<std::vector<pxar::pixelConfig>> rocPixels;
   std::vector<uint8_t> rocI2C;
 
-  uint8_t hubid = config.Get("hubid", 31);
-
+  
+  std::vector<int32_t> hubids = split(config.Get("hubid", "hubids", "-1"), ' ');
+  std::vector<uint8_t> uhubid;
+  for(size_t i = 0; i < hubids.size(); i++){
+    uhubid.push_back((uint8_t)hubids.at(i));
+    cout << "---------hubid:" <<  (int)uhubid.at(i) << endl;
+  }
+  
   // Store waiting time in ms before the DAQ is stopped in OnRunStop():
   m_tlu_waiting_time = config.Get("tlu_waiting_time", 4000);
   EUDAQ_INFO(string("Waiting " + std::to_string(m_tlu_waiting_time) +
@@ -136,10 +142,17 @@ void CMSPixelProducer::OnConfigure(const eudaq::Configuration &config) {
     // Set the type of the TBM and read registers if any:
     m_tbmtype = config.Get("tbmtype", "notbm");
     try {
+      m_channels = 2;
       tbmDACs.push_back(GetConfDACs(0, true));
       tbmDACs.push_back(GetConfDACs(1, true));
-      m_channels = 2;
+      std::string tbm10 = "tbm10c";
+      if(m_tbmtype == tbm10){
+	tbmDACs.push_back(GetConfDACs(2, true));
+	tbmDACs.push_back(GetConfDACs(3, true));
+	m_channels = 4;
+      }
     } catch (pxar::InvalidConfig) {
+      EUDAQ_ERROR(string("Invalid tbmDACs\n"));
     }
 
     // Set the type of the ROC correctly:
@@ -187,7 +200,7 @@ void CMSPixelProducer::OnConfigure(const eudaq::Configuration &config) {
     }
 
     // Initialize the DUT as configured above:
-    m_api->initDUT(hubid, m_tbmtype, tbmDACs, m_roctype, rocDACs, rocPixels,
+    m_api->initDUT(uhubid, m_tbmtype, tbmDACs, m_roctype, rocDACs, rocPixels,
                    rocI2C);
     // Store the number of configured ROCs to be stored in a BORE tag:
     m_nplanes = rocDACs.size();
